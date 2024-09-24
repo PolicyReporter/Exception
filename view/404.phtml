@@ -1,0 +1,129 @@
+<?php
+$this->layout( )->setVariable('view', 'error');
+$this->layout('layout/portal');
+require_once('lib/generalfunctions.php');
+
+$squelchError = false;
+if (isset($this->reason) && $this->reason) {
+    if ($this->reason === 'error-router-no-match') {
+        $squelchError = true;
+    }
+    $reasons = [
+        'error-controller-cannot-dispatch' => 'The requested controller was unable to dispatch the request.',
+        'error-controller-not-found' => 'The requested controller could not be mapped to an existing controller class.',
+        'error-controller-invalid' => 'The requested controller was not dispatchable.',
+        'default' => 'We cannot determine at this time why a 404 was generated.',
+    ];
+    if (empty($reasons[$this->reason])) {
+        $this->reason = 'default';
+    }
+    if (!$squelchError) {
+        \jerror('[Err404]', $reasons[$this->reason]);
+    }
+}
+?>
+<div class="layout__section row">
+    <h1>Error 404: Page Not Found</h1>
+    <div class="layout__content--display">
+        <p>We're sorry, but the requested page cannot be found.</p>
+        <p>This may have occurred because:<ul>
+            <li>The address you typed contains a typo</li>
+            <li>The page has expired</li>
+            <li>The page has been moved</li>
+        </ul></p>
+        <p>Please use the navigation at the top to find your desired page.</p>
+        <p>
+            For more information, please
+<?php if (getPermission()) { ?>
+            <a href="mailto:support@policyreporter.com">
+<?php } else { ?>
+            <a href="https://www.policyreporter.com/contact/">
+<?php } ?>
+                contact us via email
+            </a>
+            <br>or reach us directly at <a href="tel:+18557497322">+1&nbsp;(855)&nbsp;749-7322 (toll-free)</a>.
+        </p>
+<?php if (!$squelchError && isset($this->display_exceptions) && $this->display_exceptions) { ?>
+<?php   if (isset($this->controller) && $this->controller) { ?>
+    </section>
+    <section>
+        <dl>
+            <dt>Controller</dt>
+            <dd><?=$this->escapeHtml($this->controller)?>
+<?php
+if (isset($this->controller_class)
+    && $this->controller_class
+    && $this->controller_class != $this->controller
+) {
+    echo '(resolves to ' . $this->escapeHtml($this->controller_class) . ')';
+}
+?>
+            </dd>
+        </dl>
+<?php   } ?>
+<?php   if (isset($this->exception) && $this->exception instanceof \Throwable) { ?>
+</div>
+</div>
+<div class="layout__section row">
+    <h2>Additional information</h2>
+    <div class="layout__content--display">
+        <h3><?=get_class($this->exception)?></h3>
+        <dl>
+            <dt>File</dt>
+            <dd>
+                <pre class="prettyprint linenums"><?=$this->exception->getFile()?>:<?=$this->exception->getLine()?></pre>
+            </dd>
+            <dt>Message</dt>
+            <dd>
+                <pre class="prettyprint linenums"><?=$this->exception->getMessage()?></pre>
+            </dd>
+            <dt>Stack trace</dt>
+            <dd>
+                <pre class="prettyprint linenums"><?=$this->exception->getTraceAsString()?></pre>
+            </dd>
+        </dl>
+<?php
+            $e = $this->exception->getPrevious();
+            $icount = 0;
+?>
+<?php       if ($e) { ?>
+        <hr />
+        <h3>Previous exceptions</h3>
+        <ul>
+<?php           while($e) { ?>
+            <li>
+                <h4><?=get_class($e)?></h4>
+                <dl>
+                    <dt>File</dt>
+                    <dd>
+                        <pre class="prettyprint linenums"><?=$e->getFile()?>:<?=$e->getLine()?></pre>
+                    </dd>
+                    <dt>Message</dt>
+                    <dd>
+                        <pre class="prettyprint linenums"><?=$e->getMessage()?></pre>
+                    </dd>
+                    <dt>Stack trace</dt>
+                    <dd>
+                        <pre class="prettyprint linenums"><?=$e->getTraceAsString()?></pre>
+                    </dd>
+                </dl>
+            </li>
+<?php
+                    $e = $e->getPrevious();
+                    $icount += 1;
+                    if ($icount >=50) {
+                        echo "<li>There may be more exceptions, but we have no enough memory to proccess it.</li>";
+                        break;
+                    }
+?>
+<?php           } ?>
+        </ul>
+<?php       } ?>
+</div>
+</div>
+<?php   } else { ?>
+    <h4>No Exception available</h4>
+<?php   } ?>
+<?php } ?>
+</div>
+</div>
